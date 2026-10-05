@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b12">
+<title>Our Memories</title>
+<style>
+  :root{
+    --bg:#0b0b12; --surface:rgba(255,255,255,.05); --surface2:rgba(255,255,255,.09);
+    --line:rgba(255,255,255,.10); --text:#f4f4fa; --muted:#9a9ab3;
+    --accent:#ff4d79; --accent2:#7c5cff; --grad:linear-gradient(135deg,var(--accent),var(--accent2));
+    --radius:18px; --shadow:0 18px 50px rgba(0,0,0,.45);
+  }
+  [data-mode="light"]{
+    --bg:#f6f5fb; --surface:rgba(255,255,255,.75); --surface2:rgba(0,0,0,.06);
+    --line:rgba(0,0,0,.10); --text:#17172a; --muted:#6b6b85; --shadow:0 18px 40px rgba(60,40,120,.15);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;overflow-x:hidden;transition:background .4s,color .4s}
+  button{font:inherit;color:inherit;cursor:pointer}
+  input,select{font:inherit;color:inherit}
+
+  /* ===== Animated background ===== */
+  .aurora{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none}
+  .aurora i{position:absolute;border-radius:50%;filter:blur(90px);opacity:.35;animation:drift 22s ease-in-out infinite}
+  .aurora i:nth-child(1){width:46vw;height:46vw;background:var(--accent);top:-12vw;left:-10vw}
+  .aurora i:nth-child(2){width:40vw;height:40vw;background:var(--accent2);bottom:-14vw;right:-8vw;animation-delay:-8s}
+  .aurora i:nth-child(3){width:28vw;height:28vw;background:var(--accent);top:40%;left:55%;opacity:.18;animation-delay:-14s}
+  [data-mode="light"] .aurora i{opacity:.22}
+  @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vw,4vw) scale(1.15)}}
+  #fx{position:fixed;inset:0;z-index:-1;pointer-events:none}
+
+  /* ===== Lock ===== */
+  #lock{position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:var(--bg);padding:24px;text-align:center}
+  #lock.show{display:flex}
+  #lock .lockIco{font-size:3rem;animation:pulse 2s infinite}
+  #lock h2{font-size:1.5rem}
+  #lock p{color:var(--muted);font-size:.9rem}
+  #lock input{background:var(--surface);border:1px solid var(--line);padding:13px 16px;border-radius:14px;font-size:1rem;text-align:center;width:min(300px,80vw);outline:none}
+  #lock input:focus{border-color:var(--accent)}
+  #lock .go{background:var(--grad);border:0;color:#fff;padding:12px 32px;border-radius:14px;font-weight:600}
+  #lockErr{color:var(--accent);min-height:1.2em;font-size:.85rem}
+  .shake{animation:shake .4s}
+  @keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+  @keyframes pulse{50%{transform:scale(1.12)}}
+
+  /* ===== Header ===== */
+  header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 70%,transparent);backdrop-filter:blur(18px) saturate(1.4);border-bottom:1px solid var(--line)}
+  .bar{max-width:1200px;margin:0 auto;padding:12px 18px;display:flex;align-items:center;gap:14px}
+  .brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+  .logo{width:36px;height:36px;border-radius:12px;background:var(--grad);display:grid;place-items:center;font-size:1.1rem;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 45%,transparent)}
+  .brand h1{font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  nav{display:flex;gap:4px;background:var(--surface);padding:4px;border-radius:999px;border:1px solid var(--line)}
+  nav button{background:none;border:0;color:var(--muted);padding:8px 16px;border-radius:999px;font-size:.88rem;font-weight:500;transition:.25s;display:flex;align-items:center;gap:6px}
+  nav button .n{font-size:.7rem;background:var(--surface2);padding:1px 7px;border-radius:999px}
+  nav button.active{background:var(--grad);color:#fff;box-shadow:0 6px 16px color-mix(in srgb,var(--accent) 40%,transparent)}
+  nav button.active .n{background:rgba(255,255,255,.25)}
+  .tools{display:flex;gap:6px}
+  .ibtn{width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;font-size:1rem;transition:.2s}
+  .ibtn:hover{background:var(--surface2);transform:translateY(-1px)}
+  .ibtn.on{background:var(--grad);border-color:transparent;color:#fff}
+
+  main{max-width:1200px;margin:0 auto;padding:18px 18px 110px}
+
+  /* ===== Hero ===== */
+  .hero{padding:34px 8px 18px;text-align:center}
+  body.no-hero .hero{display:none}
+  .hero h2{font-size:clamp(1.9rem,5vw,3.2rem);line-height:1.1;font-weight:800;letter-spacing:-.5px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .sub{color:var(--muted);margin-top:10px;font-size:1rem;min-height:1.5em}
+  .hero .sub::after{content:"|";margin-left:2px;animation:blink 1s steps(1) infinite;color:var(--accent)}
+  @keyframes blink{50%{opacity:0}}
+  .stats{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:20px 0 6px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 18px;min-width:96px}
+  .stat b{display:block;font-size:1.3rem}
+  .stat span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+  .cta{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .btn{border:1px solid var(--line);background:var(--surface);padding:11px 20px;border-radius:14px;font-weight:600;font-size:.9rem;transition:.2s;display:inline-flex;gap:8px;align-items:center}
+  .btn:hover{background:var(--surface2);transform:translateY(-2px)}
+  .btn.primary{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 8px 22px color-mix(in srgb,var(--accent) 38%,transparent)}
+
+  section{display:none}
+  section.active{display:block;animation:fade .45s}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}}
+
+  /* ===== Toolbar ===== */
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:18px 0 14px}
+  .search{flex:1;min-width:180px;position:relative}
+  .search input{width:100%;background:var(--surface);border:1px solid var(--line);padding:11px 14px 11px 38px;border-radius:14px;outline:none;transition:.2s}
+  .search input:focus{border-color:var(--accent)}
+  .search::before{content:"🔍";position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:.85rem;opacity:.7}
+  select{background:var(--surface);border:1px solid var(--line);padding:11px 12px;border-radius:14px;outline:none}
+  select option{background:var(--bg);color:var(--text)}
+  .seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:3px}
+  .seg button{background:none;border:0;padding:8px 12px;border-radius:11px;color:var(--muted);font-size:.85rem}
+  .seg button.active{background:var(--grad);color:#fff}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{white-space:nowrap;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.8rem;color:var(--muted);transition:.2s}
+  .chip.active{background:var(--grad);color:#fff;border-color:transparent}
+  .count-line{font-size:.8rem;color:var(--muted);margin-bottom:12px}
+
+  /* ===== Empty ===== */
+  .empty{border:2px dashed var(--line);border-radius:24px;padding:60px 20px;text-align:center;color:var(--muted);background:var(--surface)}
+  .empty .ico{font-size:3rem;margin-bottom:10px;animation:pulse 3s infinite}
+  .empty h3{color:var(--text);margin-bottom:8px}
+  .empty code{background:var(--surface2);padding:2px 8px;border-radius:6px;color:var(--accent);font-size:.82rem}
+
+  /* ===== Photo grid ===== */
+  .grid.masonry{columns:4 230px;column-gap:14px}
+  .grid.uniform{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+  .card{position:relative;overflow:hidden;border-radius:var(--radius);background:var(--surface);border:1px solid var(--line);cursor:zoom-in;animation:rise .6s both;animation-delay:calc(min(var(--i),14)*45ms)}
+  .masonry .card{break-inside:avoid;margin-bottom:14px}
+  .uniform .card{aspect-ratio:1}
+  .uniform .card img,.uniform .card video{height:100%;object-fit:cover}
+  @keyframes rise{from{opacity:0;transform:translateY(24px) scale(.97)}}
+  .card img,.card video{width:100%;display:block;transition:transform .5s}
+  .card:hover img,.card:hover video{transform:scale(1.07)}
+  .card .ov{position:absolute;inset:0;background:linear-gradient(transparent 50%,rgba(0,0,0,.78));opacity:0;transition:.3s;display:flex;flex-direction:column;justify-content:flex-end;padding:12px;color:#fff;pointer-events:none}
+  .card:hover .ov{opacity:1}
+  .ov b{font-size:.85rem}
+  .ov span{font-size:.72rem;opacity:.8}
+  .badge{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);color:#fff;font-size:.68rem;padding:3px 9px;border-radius:999px}
+  .heart{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);color:#fff;font-size:1rem;transition:.2s}
+  .heart:hover{transform:scale(1.15)}
+  .heart.on{background:var(--accent);animation:pop .35s}
+  @keyframes pop{50%{transform:scale(1.4)}}
+  .playico{position:absolute;inset:0;display:grid;place-items:center;font-size:2.4rem;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.6);pointer-events:none}
+  .dur{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.6);color:#fff;font-size:.68rem;padding:2px 8px;border-radius:8px}
+
+  /* ===== Reels ===== */
+  .reelwrap{display:flex;justify-content:center;align-items:center;gap:18px}
+  .reels{height:min(78vh,760px);min-height:420px;width:min(100%,430px);overflow-y:scroll;scroll-snap-type:y mandatory;border-radius:28px;border:1px solid var(--line);background:#000;scrollbar-width:none;box-shadow:var(--shadow)}
+  .reels::-webkit-scrollbar{display:none}
+  .reel{height:100%;scroll-snap-align:start;scroll-snap-stop:always;position:relative;background:#000;overflow:hidden}
+  .reel video{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer}
+  .reel .rtop{position:absolute;top:0;left:0;right:0;padding:14px;background:linear-gradient(rgba(0,0,0,.55),transparent);display:flex;justify-content:space-between;color:#fff;font-size:.78rem;pointer-events:none}
+  .reel .meta{position:absolute;left:0;right:70px;bottom:0;padding:60px 16px 22px;background:linear-gradient(transparent,rgba(0,0,0,.82));pointer-events:none;color:#fff}
+  .reel .meta b{display:block;font-size:1rem;margin-bottom:3px}
+  .reel .meta span{font-size:.8rem;color:#d4d4e2;display:block}
+  .reel .meta em{display:inline-block;margin-top:6px;font-style:normal;font-size:.7rem;background:rgba(255,255,255,.18);padding:2px 10px;border-radius:999px}
+  .reel .side{position:absolute;right:10px;bottom:70px;display:flex;flex-direction:column;gap:12px}
+  .reel .side button{width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.16);backdrop-filter:blur(8px);color:#fff;font-size:1.1rem;transition:.2s}
+  .reel .side button:hover{background:rgba(255,255,255,.3)}
+  .reel .side button.on{background:var(--accent)}
+  .reel .playflag{position:absolute;inset:0;display:grid;place-items:center;font-size:4rem;color:#fff;opacity:0;pointer-events:none;transition:.2s}
+  .reel.paused .playflag{opacity:.85}
+  .reel .seek{position:absolute;left:0;right:0;bottom:0;height:16px;cursor:pointer;display:flex;align-items:flex-end}
+  .reel .seek i{display:block;height:3px;width:0;background:var(--grad)}
+  .burst{position:fixed;z-index:400;font-size:3rem;pointer-events:none;animation:burst .8s forwards;transform:translate(-50%,-50%)}
+  @keyframes burst{0%{transform:translate(-50%,-50%) scale(.3);opacity:1}60%{transform:translate(-50%,-90%) scale(1.3);opacity:1}100%{transform:translate(-50%,-160%) scale(1);opacity:0}}
+  .rnav{display:flex;flex-direction:column;gap:10px}
+  .hint{text-align:center;color:var(--muted);font-size:.78rem;margin-top:12px}
+
+  /* ===== Lightbox ===== */
+  .overlay{position:fixed;inset:0;z-index:200;background:rgba(5,5,10,.96);display:none;flex-direction:column}
+  .overlay.open{display:flex;animation:fade .25s}
+  .lbtop{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;color:#fff;gap:10px}
+  .lbtop .cnt{font-size:.85rem;opacity:.8}
+  .lbtop .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .lbtop .ibtn{background:rgba(255,255,255,.1);border-color:transparent;color:#fff;width:40px;height:40px}
+  .stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:0 56px}
+  .stage img{max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;transition:transform .3s;cursor:zoom-in;user-select:none;-webkit-user-drag:none}
+  .stage img.zoomed{transform:scale(2.4);cursor:zoom-out}
+  .stage img.swapin{animation:swap .35s}
+  @keyframes swap{from{opacity:0;transform:scale(.96)}}
+  .nav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font-size:1.5rem;z-index:2}
+  .nav:hover{background:rgba(255,255,255,.25)}
+  .nav.prev{left:8px}.nav.next{right:8px}
+  .lbcap{text-align:center;color:#d4d4e2;font-size:.92rem;padding:10px 16px;min-height:2.4em}
+  .lbcap small{display:block;color:#8d8da6;font-size:.75rem;margin-top:2px}
+  .thumbs{display:flex;gap:8px;overflow-x:auto;padding:8px 14px 16px;scrollbar-width:none;justify-content:flex-start}
+  .thumbs::-webkit-scrollbar{display:none}
+  .thumbs img{height:54px;width:54px;object-fit:cover;border-radius:10px;opacity:.45;cursor:pointer;border:2px solid transparent;transition:.2s;flex:none}
+  .thumbs img.cur{opacity:1;border-color:var(--accent)}
+  .slidebar{height:3px;background:var(--grad);width:0}
+  .slidebar.run{animation:fill var(--dur,3.5s) linear forwards}
+  @keyframes fill{to{width:100%}}
+
+  /* ===== Video modal ===== */
+  #vm .vbox{margin:auto;width:min(94vw,900px);position:relative}
+  #vm video{width:100%;max-height:82vh;border-radius:16px;background:#000}
+  #vm .vcap{color:#d4d4e2;text-align:center;margin-top:10px;font-size:.9rem}
+  #vm .x{position:absolute;top:-48px;right:0}
+
+  /* ===== Misc ===== */
+  #toast{position:fixed;bottom:90px;left:50%;transform:translate(-50%,30px);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:999px;font-size:.85rem;font-weight:600;opacity:0;pointer-events:none;transition:.3s;z-index:500}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+  footer{text-align:center;color:var(--muted);font-size:.78rem;padding:20px 0 40px;line-height:1.8}
+  kbd{background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:.72rem}
+  #top{position:fixed;right:16px;bottom:90px;z-index:30;opacity:0;pointer-events:none;transition:.3s}
+  #top.show{opacity:1;pointer-events:auto}
+  .pal{position:fixed;top:64px;right:14px;z-index:60;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:10px;display:none;gap:8px;box-shadow:var(--shadow)}
+  .pal.open{display:flex}
+  .pal button{width:30px;height:30px;border-radius:50%;border:2px solid transparent}
+  .pal button.cur{border-color:var(--text)}
+
+  @media(max-width:700px){
+    .bar{flex-wrap:wrap}
+    .brand{flex:1 1 auto}
+    nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:50;box-shadow:var(--shadow);background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(16px)}
+    nav button{padding:10px 14px}
+    .reels{height:calc(100svh - 190px);border-radius:20px}
+    .rnav{display:none}
+    .stage{padding:0 8px}
+    .nav{display:none}
+    #top{bottom:80px}
+    #toast{bottom:80px}
+  }
+</style>
+</head>
+<body>
+
+<div class="aurora"><i></i><i></i><i></i></div>
+<canvas id="fx"></canvas>
+
+<!-- Lock (optional) -->
+<div id="lock">
+  <div class="lockIco">🔒</div>
+  <h2>Private memories</h2>
+  <p>Enter the passcode to continue</p>
+  <input id="lockInput" type="password" placeholder="Passcode" autocomplete="off">
+  <div id="lockErr"></div>
+  <button class="go" id="lockBtn">Unlock</button>
+</div>
+
+<header>
+  <div class="bar">
+    <div class="brand">
+      <div class="logo">✦</div>
+      <h1 id="siteTitle">Our Memories</h1>
+    </div>
+    <nav id="tabs">
+      <button data-tab="photos" class="active">📷 <span>Photos</span> <span class="n" id="nP">0</span></button>
+      <button data-tab="reels">🎬 <span>Reels</span> <span class="n" id="nV">0</span></button>
+      <button data-tab="favs">❤️ <span>Favorites</span> <span class="n" id="nF">0</span></button>
+    </nav>
+    <div class="tools">
+      <button class="ibtn" id="btnMusic" title="Music" style="display:none">🎵</button>
+      <button class="ibtn" id="btnShuffle" title="Surprise me">🎲</button>
+      <button class="ibtn" id="btnPal" title="Colors">🎨</button>
+      <button class="ibtn" id="btnMode" title="Light / dark">🌙</button>
+    </div>
+  </div>
+</header>
+<div class="pal" id="pal"></div>
+
+<main>
+  <div class="hero">
+    <h2 id="heroTitle">Our Memories</h2>
+    <div class="sub" id="typed"></div>
+    <div class="stats">
+      <div class="stat"><b id="sP">0</b><span>Photos</span></div>
+      <div class="stat"><b id="sV">0</b><span>Videos</span></div>
+      <div class="stat"><b id="sF">0</b><span>Favorites</span></div>
+    </div>
+    <div class="cta">
+      <button class="btn primary" id="btnSlide">▶ Slideshow</button>
+      <button class="btn" id="btnSurprise">🎲 Surprise me</button>
+    </div>
+  </div>
+
+  <!-- PHOTOS -->
+  <section id="photos" class="active">
+    <div class="toolbar">
+      <div class="search"><input id="q" type="search" placeholder="Search captions, dates, albums…"></div>
+      <select id="sort">
+        <option value="default">Default order</option>
+        <option value="new">Newest first</option>
+        <option value="old">Oldest first</option>
+        <option value="shuffle">Shuffle</option>
+      </select>
+      <div class="seg" id="layoutSeg">
+        <button data-l="masonry" class="active" title="Masonry">▦</button>
+        <button data-l="uniform" title="Square grid">▣</button>
+      </div>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="count-line" id="photoCount"></div>
+    <div class="grid masonry" id="photoGrid"></div>
+    <div class="empty" id="photoEmpty">
+      <div class="ico">📷</div>
+      <h3>No photos yet</h3>
+      <p>Put your <code>.jpg</code> files in the repo (e.g. <code>photos/</code>)<br>then list them in the <code>PHOTOS</code> array inside this file.</p>
+    </div>
+  </section>
+
+  <!-- REELS -->
+  <section id="reels">
+    <div class="toolbar" id="reelTools" style="justify-content:center">
+      <div class="seg" id="viewSeg">
+        <button data-v="feed" class="active">🎞 Feed</button>
+        <button data-v="grid">▦ Grid</button>
+      </div>
+      <button class="btn" id="btnAuto">⏭ Auto-next: Off</button>
+      <button class="btn" id="btnSpeed">⚡ 1x</button>
+    </div>
+    <div class="reelwrap" id="feedWrap">
+      <div class="reels" id="reelFeed"></div>
+      <div class="rnav">
+        <button class="ibtn" id="rUp" title="Previous">▲</button>
+        <button class="ibtn" id="rDown" title="Next">▼</button>
+      </div>
+    </div>
+    <p class="hint" id="reelHint">Scroll for next · tap to pause · double-tap to like · <kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>M</kbd> mute · <kbd>L</kbd> like</p>
+    <div class="grid uniform" id="videoGrid" style="display:none"></div>
+    <div class="empty" id="videoEmpty">
+      <div class="ico">🎬</div>
+      <h3>No videos yet</h3>
+      <p>Put your <code>.mp4</code> files in the repo (e.g. <code>videos/</code>)<br>then list them in the <code>VIDEOS</code> array inside this file.</p>
+    </div>
+  </section>
+
+  <!-- FAVORITES -->
+  <section id="favs">
+    <div class="count-line" id="favCount"></div>
+    <div class="grid masonry" id="favGrid"></div>
+    <div class="empty" id="favEmpty">
+      <div class="ico">❤️</div>
+      <h3>No favorites yet</h3>
+      <p>Tap the heart on any photo or reel to keep it here.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Made with ♥ for the people who made these moments<br>
+  <small>Gallery: <kbd>←</kbd><kbd>→</kbd> browse · <kbd>Space</kbd> slideshow · <kbd>F</kbd> favorite · <kbd>Esc</kbd> close</small>
+</footer>
+
+<button class="ibtn" id="top" title="Back to top">↑</button>
+
+<!-- Photo lightbox -->
+<div class="overlay" id="lb">
+  <div class="lbtop">
+    <span class="cnt" id="lbCnt"></span>
+    <div class="acts">
+      <button class="ibtn" id="lbSlide" title="Slideshow (Space)">▶</button>
+      <button class="ibtn" id="lbFav" title="Favorite (F)">♡</button>
+      <button class="ibtn" id="lbShare" title="Share">↗</button>
+      <button class="ibtn" id="lbDl" title="Download">⬇</button>
+      <button class="ibtn" id="lbFs" title="Fullscreen">⛶</button>
+      <button class="ibtn" id="lbClose" title="Close (Esc)">✕</button>
+    </div>
+  </div>
+  <div class="slidebar" id="slidebar"></div>
+  <div class="stage" id="stage">
+    <button class="nav prev" id="lbPrev">‹</button>
+    <img id="lbImg" alt="">
+    <button class="nav next" id="lbNext">›</button>
+  </div>
+  <div class="lbcap" id="lbCap"></div>
+  <div class="thumbs" id="thumbs"></div>
+</div>
+
+<!-- Video modal -->
+<div class="overlay" id="vm">
+  <div class="vbox">
+    <button class="ibtn x" id="vmClose" style="background:rgba(255,255,255,.12);color:#fff;border:0">✕</button>
+    <video id="vmVideo" controls playsinline></video>
+    <div class="vcap" id="vmCap"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<audio id="bgm" loop></audio>
+
+<script>
+/* =========================================================
+   CONFIG — edit this part only
+   ========================================================= */
+const SITE_TITLE    = "Our Memories";
+const SITE_SUBTITLE = ["The moments that stayed with us", "Little things, big memories", "Forever starts here"];
+
+// Optional passcode. Leave "" for no lock.
+// (Only a casual gate — anyone who can read the repo can read the code.)
+const PASSCODE = "";
+
+// Optional background music file, e.g. "music/song.mp3". Leave "" to hide the button.
+const MUSIC = "";
+
+/* PHOTOS — put your .jpg files in the repo and list them here.
+   Every field except src is optional:
+   { src: "photos/img1.jpg", caption: "Trip day 1", date: "2024-05-12", tag: "Trip" },
+   "photos/img2.jpg",
+*/
+const PHOTOS = [
+  // 👉 keep your .jpg paths here
+];
+
+/* VIDEOS — put your .mp4 files in the repo and list them here.
+   { src: "videos/clip1.mp4", title: "Birthday night", caption: "Cake time!", date: "2024-03-02", tag: "Party", poster: "photos/cover.jpg" },
+   "videos/clip2.mp4",
+*/
+const VIDEOS = [
+  // 👉 keep your .mp4 paths here
+];
+
+/* =========================================================
+   APP CODE
+   ========================================================= */
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = x => typeof x === "string" ? { src: x } : { ...x };
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+};
+const fmtDate = d => { if(!d) return ""; const t = new Date(d); return isNaN(t) ? esc(d) : t.toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"}); };
+const fmtDur = s => isFinite(s) ? Math.floor(s/60) + ":" + String(Math.floor(s%60)).padStart(2,"0") : "";
+const abs = src => new URL(src, location.href).href;
+
+const photos = PHOTOS.map(norm);
+const videos = VIDEOS.map(norm);
+const favs = new Set(store.get("mem_favs", []));
+let prefs = { mode:"dark", pal:0, layout:"masonry", sort:"default", autoNext:false, speed:1, tab:"photos", ...store.get("mem_prefs", {}) };
+const savePrefs = () => store.set("mem_prefs", prefs);
+
+/* ---------- Toast ---------- */
+let toastT;
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove("show"), 1800); }
+
+/* ---------- Lock ---------- */
+if (PASSCODE && sessionStorage.getItem("mem_ok") !== "1") {
+  $("#lock").classList.add("show");
+  const tryUnlock = () => {
+    if ($("#lockInput").value === PASSCODE) { sessionStorage.setItem("mem_ok","1"); $("#lock").classList.remove("show"); }
+    else { $("#lockErr").textContent = "Wrong passcode"; const i = $("#lockInput"); i.classList.remove("shake"); void i.offsetWidth; i.classList.add("shake"); }
+  };
+  $("#lockBtn").onclick = tryUnlock;
+  $("#lockInput").addEventListener("keydown", e => e.key === "Enter" && tryUnlock());
+}
+
+/* ---------- Titles / typing ---------- */
+$("#siteTitle").textContent = SITE_TITLE;
+$("#heroTitle").textContent = SITE_TITLE;
+document.title = SITE_TITLE;
+(function typing(){
+  const lines = Array.isArray(SITE_SUBTITLE) ? SITE_SUBTITLE : [SITE_SUBTITLE];
+  const el = $("#typed"); let li = 0, ci = 0, del = false;
+  (function tick(){
+    const txt = lines[li];
+    el.textContent = txt.slice(0, ci);
+    if (!del && ci < txt.length) { ci++; setTimeout(tick, 55); }
+    else if (!del) { if (lines.length === 1) return; del = true; setTimeout(tick, 1800); }
+    else if (ci > 0) { ci--; setTimeout(tick, 28); }
+    else { del = false; li = (li + 1) % lines.length; setTimeout(tick, 300); }
+  })();
+})();
+
+/* ---------- Theme / palette ---------- */
+const PALETTES = [
+  ["#ff4d79","#7c5cff"], ["#22d3ee","#6366f1"], ["#ff9a3c","#ff3d68"], ["#34d399","#3b82f6"], ["#fbbf24","#f43f5e"]
+];
+function applyTheme(){
+  document.documentElement.dataset.mode = prefs.mode;
+  const p = PALETTES[prefs.pal % PALETTES.length];
+  document.documentElement.style.setProperty("--accent", p[0]);
+  document.documentElement.style.setProperty("--accent2", p[1]);
+  $("#btnMode").textContent = prefs.mode === "dark" ? "🌙" : "☀️";
+  $$("#pal button").forEach((b,i)=>b.classList.toggle("cur", i === prefs.pal));
+  $("meta[name=theme-color]").content = prefs.mode === "dark" ? "#0b0b12" : "#f6f5fb";
+}
+PALETTES.forEach((p,i)=>{
+  const b = document.createElement("button");
+  b.style.background = `linear-gradient(135deg,${p[0]},${p[1]})`;
+  b.onclick = () => { prefs.pal = i; savePrefs(); applyTheme(); };
+  $("#pal").appendChild(b);
+});
+$("#btnPal").onclick = e => { e.stopPropagation(); $("#pal").classList.toggle("open"); };
+document.addEventListener("click", e => { if (!e.target.closest("#pal")) $("#pal").classList.remove("open"); });
+$("#btnMode").onclick = () => { prefs.mode = prefs.mode === "dark" ? "light" : "dark"; savePrefs(); applyTheme(); };
+applyTheme();
+
+/* ---------- Floating particles ---------- */
+(function particles(){
+  const c = $("#fx"), ctx = c.getContext("2d"); let W, H, dots = [];
+  const sym = ["♥","✦","•"];
+  const resize = () => { W = c.width = innerWidth; H = c.height = innerHeight; };
+  resize(); addEventListener("resize", resize);
+  for (let i = 0; i < 22; i++) dots.push({ x:Math.random()*W, y:Math.random()*H, s:6+Math.random()*12, v:.15+Math.random()*.4, a:.05+Math.random()*.14, t:sym[i%3] });
+  (function loop(){
+    if (!document.hidden) {
+      ctx.clearRect(0,0,W,H);
+      const col = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#ff4d79";
+      dots.forEach(d => {
+        d.y -= d.v; if (d.y < -20) { d.y = H + 20; d.x = Math.random()*W; }
+        ctx.globalAlpha = d.a; ctx.fillStyle = col; ctx.font = d.s + "px sans-serif"; ctx.fillText(d.t, d.x, d.y);
+      });
+    }
+    requestAnimationFrame(loop);
+  })();
+})();
+
+/* ---------- Favorites ---------- */
+function persistFavs(){ store.set("mem_favs", [...favs]); }
+function toggleFav(src){
+  favs.has(src) ? favs.delete(src) : favs.add(src);
+  persistFavs(); refreshFavUI();
+  toast(favs.has(src) ? "Added to favorites ❤️" : "Removed from favorites");
+}
+function refreshFavUI(){
+  $$("[data-fav]").forEach(b => { b.classList.toggle("on", favs.has(b.dataset.fav)); if (b.classList.contains("heart")) b.textContent = favs.has(b.dataset.fav) ? "♥" : "♡"; });
+  $$(".reel .like").forEach(b => b.textContent = "♥");
+  const total = [...favs].filter(s => photos.some(p=>p.src===s) || videos.some(v=>v.src===s)).length;
+  $("#nF").textContent = total; $("#sF").textContent = total;
+  if (lbList.length && $("#lb").classList.contains("open")) $("#lbFav").textContent = favs.has(lbList[lbIdx].src) ? "♥" : "♡";
+  if (curTab === "favs") renderFavs();
+}
+function burst(x, y, ch = "❤️"){
+  const s = document.createElement("span"); s.className = "burst"; s.textContent = ch; s.style.left = x + "px"; s.style.top = y + "px";
+  document.body.appendChild(s); setTimeout(() => s.remove(), 800);
+}
+
+/* ---------- Share / download ---------- */
+async function shareItem(it){
+  const url = abs(it.src);
+  try {
+    if (navigator.share) await navigator.share({ title: it.title || it.caption || SITE_TITLE, url });
+    else { await navigator.clipboard.writeText(url); toast("Link copied 🔗"); }
+  } catch(e){}
+}
+function downloadItem(it){
+  const a = document.createElement("a"); a.href = it.src; a.download = it.src.split("/").pop(); document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* =========================================================
+   PHOTOS
+   ========================================================= */
+let activeTag = "all", shuffled = null;
+const grid = $("#photoGrid");
+
+function buildChips(){
+  const tags = [...new Set([...photos, ...videos].map(p => p.tag).filter(Boolean))];
+  const box = $("#chips"); box.innerHTML = "";
+  if (!tags.length) { box.style.display = "none"; return; }
+  ["all", ...tags].forEach(t => {
+    const b = document.createElement("button");
+    b.className = "chip" + (t === activeTag ? " active" : "");
+    b.textContent = t === "all" ? "All" : t;
+    b.onclick = () => { activeTag = t; buildChips(); renderPhotos(); };
+    box.appendChild(b);
+  });
+}
+function sortList(list, mode){
+  const l = [...list];
+  if (mode === "shuffle") { if (!shuffled || shuffled.length !== l.length) shuffled = l.map(Math.random); return l.map((x,i)=>[x,shuffled[i]]).sort((a,b)=>a[1]-b[1]).map(x=>x[0]); }
+  if (mode === "new" || mode === "old") {
+    l.sort((a,b) => { const da = a.date ? +new Date(a.date) : null, db = b.date ? +new Date(b.date) : null;
+      if (da === null && db === null) return 0; if (da === null) return 1; if (db === null) return -1;
+      return mode === "new" ? db - da : da - db; });
+  }
+  return l;
+}
+let photoView = [];
+function renderPhotos(){
+  const q = $("#q").value.trim().toLowerCase();
+  let list = photos.filter(p => (activeTag === "all" || p.tag === activeTag) &&
+    (!q || [p.caption,p.tag,p.date,p.src].join(" ").toLowerCase().includes(q)));
+  list = sortList(list, prefs.sort);
+  photoView = list;
+  grid.className = "grid " + prefs.layout; grid.innerHTML = "";
+  $("#photoEmpty").style.display = photos.length ? "none" : "block";
+  $("#photoCount").textContent = photos.length ? `${list.length} of ${photos.length} photos` : "";
+  list.forEach((p, i) => grid.appendChild(photoCard(p, i, () => openLB(list, i))));
+  refreshFavUI();
+}
+function photoCard(p, i, onOpen){
+  const d = document.createElement("div"); d.className = "card"; d.style.setProperty("--i", i);
+  d.innerHTML = `<img loading="lazy" src="${esc(p.src)}" alt="${esc(p.caption || "Memory " + (i+1))}">` +
+    (p.tag ? `<span class="badge">${esc(p.tag)}</span>` : "") +
+    `<button class="heart" data-fav="${esc(p.src)}" title="Favorite">♡</button>` +
+    `<div class="ov">${p.caption ? `<b>${esc(p.caption)}</b>` : ""}${p.date ? `<span>${fmtDate(p.date)}</span>` : ""}</div>`;
+  d.querySelector("img").addEventListener("error", () => d.remove());
+  d.querySelector(".heart").onclick = e => { e.stopPropagation(); if (!favs.has(p.src)) burst(e.clientX, e.clientY); toggleFav(p.src); };
+  d.onclick = onOpen;
+  return d;
+}
+$("#q").addEventListener("input", renderPhotos);
+$("#sort").value = prefs.sort;
+$("#sort").onchange = e => { prefs.sort = e.target.value; shuffled = null; savePrefs(); renderPhotos(); };
+$$("#layoutSeg button").forEach(b => {
+  b.classList.toggle("active", b.dataset.l === prefs.layout);
+  b.onclick = () => { prefs.layout = b.dataset.l; savePrefs(); $$("#layoutSeg button").forEach(x => x.classList.toggle("active", x === b)); renderPhotos(); renderFavs(); };
+});
+
+/* =========================================================
+   LIGHTBOX
+   ========================================================= */
+let lbList = [], lbIdx = 0, slideT = null;
+const lb = $("#lb"), lbImg = $("#lbImg");
+
+function openLB(list, i, autoplay = false){
+  if (!list.length) return;
+  lbList = list; lbIdx = i; lb.classList.add("open"); document.body.style.overflow = "hidden";
+  pauseAllReels(); buildThumbs(); showLB();
+  if (autoplay) startSlide();
+}
+function showLB(){
+  const it = lbList[lbIdx];
+  lbImg.classList.remove("zoomed", "swapin"); void lbImg.offsetWidth; lbImg.classList.add("swapin");
+  lbImg.src = it.src; lbImg.alt = it.caption || "";
+  $("#lbCnt").textContent = `${lbIdx + 1} / ${lbList.length}`;
+  $("#lbCap").innerHTML = esc(it.caption || "") + (it.date || it.tag ? `<small>${[fmtDate(it.date), esc(it.tag || "")].filter(Boolean).join(" · ")}</small>` : "");
+  $("#lbFav").textContent = favs.has(it.src) ? "♥" : "♡";
+  $$("#thumbs img").forEach((t, n) => { t.classList.toggle("cur", n === lbIdx); if (n === lbIdx) t.scrollIntoView({ inline:"center", block:"nearest", behavior:"smooth" }); });
+  // preload neighbors
+  [1, -1].forEach(d => { const n = lbList[(lbIdx + d + lbList.length) % lbList.length]; if (n) new Image().src = n.src; });
+  if (slideT) restartBar();
+}
+function buildThumbs(){
+  const box = $("#thumbs"); box.innerHTML = "";
+  if (lbList.length > 150) return;
+  lbList.forEach((p, n) => { const t = document.createElement("img"); t.loading = "lazy"; t.src = p.src; t.onclick = () => { lbIdx = n; showLB(); }; box.appendChild(t); });
+}
+function stepLB(n){ lbIdx = (lbIdx + n + lbList.length) % lbList.length; showLB(); }
+function closeLB(){ stopSlide(); lb.classList.remove("open"); document.body.style.overflow = ""; if (document.fullscreenElement) document.exitFullscreen(); }
+function restartBar(){ const b = $("#slidebar"); b.classList.remove("run"); void b.offsetWidth; b.style.setProperty("--dur","3.5s"); b.classList.add("run"); }
+function startSlide(){ stopSlide(); $("#lbSlide").textContent = "⏸"; restartBar(); slideT = setInterval(() => stepLB(1), 3500); toast("Slideshow started"); }
+function stopSlide(){ if (slideT) { clearInterval(slideT); slideT = null; } $("#lbSlide").textContent = "▶"; $("#slidebar").classList.remove("run"); }
+function toggleSlide(){ slideT ? stopSlide() : startSlide(); }
+
+$("#lbClose").onclick = closeLB;
+$("#lbPrev").onclick = () => stepLB(-1);
+$("#lbNext").onclick = () => stepLB(1);
+$("#lbSlide").onclick = toggleSlide;
+$("#lbFav").onclick = () => toggleFav(lbList[lbIdx].src);
+$("#lbShare").onclick = () => shareItem(lbList[lbIdx]);
+$("#lbDl").onclick = () => downloadItem(lbList[lbIdx]);
+$("#lbFs").onclick = () => document.fullscreenElement ? document.exitFullscreen() : lb.requestFullscreen?.();
+lbImg.onclick = e => {
+  const r = lbImg.getBoundingClientRect();
+  lbImg.style.transformOrigin = ((e.clientX - r.left) / r.width * 100) + "% " + ((e.clientY - r.top) / r.height * 100) + "%";
+  lbImg.classList.toggle("zoomed");
+};
+lbImg.addEventListener("mousemove", e => {
+  if (!lbImg.classList.contains("zoomed")) return;
+  const r = lbImg.getBoundingClientRect();
+  lbImg.style.transformOrigin = ((e.clientX - r.left) / r.width * 100) + "% " + ((e.clientY - r.top) / r.height * 100) + "%";
+});
+$("#stage").addEventListener("click", e => { if (e.target.id === "stage") closeLB(); });
+let tx = 0, ty = 0;
+$("#stage").addEventListener("touchstart", e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive:true });
+$("#stage").addEventListener("touchend", e => {
+  const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) stepLB(dx < 0 ? 1 : -1);
+  else if (dy > 90) closeLB();
+});
+
+/* ---------- Video modal ---------- */
+const vm = $("#vm"), vmV = $("#vmVideo");
+function openVM(v){
+  pauseAllReels(); vm.classList.add("open"); document.body.style.overflow = "hidden";
+  vmV.src = v.src; vmV.poster = v.poster || ""; vmV.play().catch(()=>{});
+  $("#vmCap").innerHTML = `<b>${esc(v.title || "")}</b> ${esc(v.caption || "")}`;
+}
+function closeVM(){ vmV.pause(); vmV.removeAttribute("src"); vmV.load(); vm.classList.remove("open"); document.body.style.overflow = ""; }
+$("#vmClose").onclick = closeVM;
+vm.addEventListener("click", e => { if (e.target === vm) closeVM(); });
+
+/* =========================================================
+   REELS
+   ========================================================= */
+const feed = $("#reelFeed");
+let muted = true, curReel = 0, reelView = "feed";
+const reelsActive = () => curTab === "reels" && reelView === "feed" && !lb.classList.contains("open") && !vm.classList.contains("open");
+
+if (!videos.length) { $("#feedWrap").style.display = "none"; $("#reelHint").style.display = "none"; $("#reelTools").style.display = "none"; }
+else $("#videoEmpty").style.display = "none";
+
+videos.forEach((v, i) => {
+  const r = document.createElement("div"); r.className = "reel"; r.dataset.i = i;
+  r.innerHTML = `
+    <video src="${esc(v.src)}" ${v.poster ? `poster="${esc(v.poster)}"` : ""} loop playsinline muted preload="metadata"></video>
+    <div class="rtop"><span>${i + 1} / ${videos.length}</span><span>${fmtDate(v.date)}</span></div>
+    <div class="playflag">▶</div>
+    <div class="side">
+      <button class="like" data-fav="${esc(v.src)}" title="Like">♥</button>
+      <button class="mute" title="Sound">🔇</button>
+      <button class="share" title="Share">↗</button>
+      <button class="dl" title="Download">⬇</button>
+      <button class="fs" title="Fullscreen">⛶</button>
+    </div>
+    <div class="meta"><b>${esc(v.title || "Memory " + (i + 1))}</b><span>${esc(v.caption || "")}</span>${v.tag ? `<em>${esc(v.tag)}</em>` : ""}</div>
+    <div class="seek"><i></i></div>`;
+  const vid = r.querySelector("video"), bar = r.querySelector(".seek i"), seek = r.querySelector(".seek");
+  vid.addEventListener("timeupdate", () => bar.style.width = (vid.currentTime / (vid.duration || 1) * 100) + "%");
+  vid.addEventListener("error", () => r.remove());
+  vid.addEventListener("ended", () => { if (prefs.autoNext) { const n = feed.children[i + 1] || feed.children[0]; n.scrollIntoView({ behavior:"smooth" }); } });
+  seek.addEventListener("click", e => { e.stopPropagation(); const b = seek.getBoundingClientRect(); vid.currentTime = ((e.clientX - b.left) / b.width) * (vid.duration || 0); });
+
+  let lastTap = 0, tapT;
+  vid.addEventListener("click", e => {
+    const now = Date.now();
+    if (now - lastTap < 300) { clearTimeout(tapT); lastTap = 0; if (!favs.has(v.src)) toggleFav(v.src); burst(e.clientX, e.clientY); return; }
+    lastTap = now; tapT = setTimeout(() => togglePlay(r), 280);
+  });
+  r.querySelector(".like").onclick = e => { if (!favs.has(v.src)) burst(e.clientX, e.clientY); toggleFav(v.src); };
+  r.querySelector(".mute").onclick = () => { muted = !muted; $$(".reel video").forEach(x => x.muted = muted); $$(".reel .mute").forEach(x => x.textContent = muted ? "🔇" : "🔊"); };
+  r.querySelector(".share").onclick = () => shareItem(v);
+  r.querySelector(".dl").onclick = () => downloadItem(v);
+  r.querySelector(".fs").onclick = () => vid.requestFullscreen?.() || vid.webkitEnterFullscreen?.();
+  feed.appendChild(r);
+});
+
+function playReel(r){ const v = r.querySelector("video"); v.muted = muted; v.playbackRate = prefs.speed; v.loop = !prefs.autoNext; v.play().catch(() => {}); r.classList.remove("paused"); }
+function togglePlay(r){ const v = r.querySelector("video"); if (v.paused) playReel(r); else { v.pause(); r.classList.add("paused"); } }
+function pauseAllReels(){ $$(".reel video").forEach(v => v.pause()); }
+
+const io = new IntersectionObserver(entries => entries.forEach(en => {
+  const r = en.target, v = r.querySelector("video");
+  if (en.isIntersecting && en.intersectionRatio >= .6) { curReel = [...feed.children].indexOf(r); if (reelsActive()) playReel(r); }
+  else v.pause();
+}), { root: feed, threshold: [0, .6, 1] });
+$$(".reel").forEach(r => io.observe(r));
+
+function goReel(n){ const t = feed.children[Math.max(0, Math.min(feed.children.length - 1, n))]; t && t.scrollIntoView({ behavior:"smooth" }); }
+$("#rUp").onclick = () => goReel(curReel - 1);
+$("#rDown").onclick = () => goReel(curReel + 1);
+
+function playCurrentReel(){ const r = feed.children[curReel] || feed.children[0]; if (r && reelsActive()) playReel(r); }
+function setReelView(v){
+  reelView = v;
+  $$("#viewSeg button").forEach(b => b.classList.toggle("active", b.dataset.v === v));
+  if (!videos.length) return;
+  $("#feedWrap").style.display = v === "feed" ? "flex" : "none";
+  $("#reelHint").style.display = v === "feed" ? "block" : "none";
+  $("#videoGrid").style.display = v === "grid" ? "grid" : "none";
+  if (v === "grid") { pauseAllReels(); renderVideoGrid(); } else setTimeout(playCurrentReel, 120);
+}
+$$("#viewSeg button").forEach(b => b.onclick = () => setReelView(b.dataset.v));
+
+$("#btnAuto").textContent = "⏭ Auto-next: " + (prefs.autoNext ? "On" : "Off");
+$("#btnAuto").onclick = () => { prefs.autoNext = !prefs.autoNext; savePrefs(); $("#btnAuto").textContent = "⏭ Auto-next: " + (prefs.autoNext ? "On" : "Off"); $$(".reel video").forEach(v => v.loop = !prefs.autoNext); };
+const SPEEDS = [1, 1.5, 2, 0.5];
+$("#btnSpeed").textContent = "⚡ " + prefs.speed + "x";
+$("#btnSpeed").onclick = () => { prefs.speed = SPEEDS[(SPEEDS.indexOf(prefs.speed) + 1) % SPEEDS.length]; savePrefs(); $("#btnSpeed").textContent = "⚡ " + prefs.speed + "x"; $$(".reel video").forEach(v => v.playbackRate = prefs.speed); toast("Speed " + prefs.speed + "x"); };
+
+function videoCard(v, i, onOpen){
+  const d = document.createElement("div"); d.className = "card"; d.style.setProperty("--i", i);
+  d.innerHTML = `<video src="${esc(v.src)}#t=0.5" ${v.poster ? `poster="${esc(v.poster)}"` : ""} muted playsinline preload="metadata"></video>
+    <div class="playico">▶</div><span class="dur"></span>
+    ${v.tag ? `<span class="badge">${esc(v.tag)}</span>` : `<span class="badge">🎬 Video</span>`}
+    <button class="heart" data-fav="${esc(v.src)}">♡</button>
+    <div class="ov"><b>${esc(v.title || "")}</b><span>${esc(v.caption || "")}</span></div>`;
+  const vv = d.querySelector("video");
+  vv.addEventListener("loadedmetadata", () => d.querySelector(".dur").textContent = fmtDur(vv.duration));
+  vv.addEventListener("error", () => d.remove());
+  d.addEventListener("mouseenter", () => { vv.currentTime = 0; vv.play().catch(()=>{}); });
+  d.addEventListener("mouseleave", () => vv.pause());
+  d.querySelector(".heart").onclick = e => { e.stopPropagation(); if (!favs.has(v.src)) burst(e.clientX, e.clientY); toggleFav(v.src); };
+  d.onclick = onOpen;
+  return d;
+}
+function renderVideoGrid(){
+  const g = $("#videoGrid"); g.innerHTML = "";
+  videos.forEach((v, i) => g.appendChild(videoCard(v, i, () => { setReelView("feed"); setTimeout(() => { feed.children[i]?.scrollIntoView(); curReel = i; playCurrentReel(); }, 160); })));
+  refreshFavUI();
+}
+
+/* =========================================================
+   FAVORITES
+   ========================================================= */
+function renderFavs(){
+  const g = $("#favGrid"); g.className = "grid " + prefs.layout; g.innerHTML = "";
+  const fp = photos.filter(p => favs.has(p.src)), fv = videos.filter(v => favs.has(v.src));
+  $("#favEmpty").style.display = (fp.length + fv.length) ? "none" : "block";
+  $("#favCount").textContent = (fp.length + fv.length) ? `${fp.length} photos · ${fv.length} videos` : "";
+  fp.forEach((p, i) => g.appendChild(photoCard(p, i, () => openLB(fp, i))));
+  fv.forEach((v, i) => g.appendChild(videoCard(v, fp.length + i, () => openVM(v))));
+  $$("#favGrid [data-fav]").forEach(b => { b.classList.add("on"); b.textContent = "♥"; });
+}
+
+/* =========================================================
+   TABS / HERO / SURPRISE / MUSIC
+   ========================================================= */
+let curTab = "photos";
+function showTab(t, scroll = true){
+  curTab = t; prefs.tab = t; savePrefs();
+  $$("#tabs button").forEach(b => b.classList.toggle("active", b.dataset.tab === t));
+  $$("section").forEach(s => s.classList.toggle("active", s.id === t));
+  document.body.classList.toggle("no-hero", t === "reels");
+  pauseAllReels();
+  if (t === "reels") { if (reelView === "feed") setTimeout(playCurrentReel, 150); else renderVideoGrid(); }
+  if (t === "favs") renderFavs();
+  if (scroll) window.scrollTo({ top: 0, behavior: "smooth" });
+}
+$$("#tabs button").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+
+$("#nP").textContent = $("#sP").textContent = photos.length;
+$("#nV").textContent = $("#sV").textContent = videos.length;
+
+function surprise(){
+  const all = [...photos.map(p => ({ t:"p", it:p })), ...videos.map(v => ({ t:"v", it:v }))];
+  if (!all.length) return toast("Add some photos or videos first 💛");
+  const pick = all[Math.floor(Math.random() * all.length)];
+  if (pick.t === "p") openLB([pick.it], 0); else openVM(pick.it);
+}
+$("#btnSurprise").onclick = $("#btnShuffle").onclick = surprise;
+$("#btnSlide").onclick = () => photoView.length ? openLB(photoView, 0, true) : toast("Add some photos first 📷");
+
+// Music
+if (MUSIC) {
+  const a = $("#bgm"), b = $("#btnMusic"); a.src = MUSIC; b.style.display = "grid";
+  b.onclick = () => { if (a.paused) { a.play().then(() => b.classList.add("on")).catch(() => toast("Tap again to allow audio")); } else { a.pause(); b.classList.remove("on"); } };
+}
+
+// Back to top
+addEventListener("scroll", () => $("#top").classList.toggle("show", scrollY > 500), { passive:true });
+$("#top").onclick = () => scrollTo({ top:0, behavior:"smooth" });
+
+/* ---------- Keyboard ---------- */
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input,select,textarea")) return;
+  if (lb.classList.contains("open")) {
+    if (e.key === "Escape") closeLB();
+    else if (e.key === "ArrowLeft") stepLB(-1);
+    else if (e.key === "ArrowRight") stepLB(1);
+    else if (e.key === " ") { e.preventDefault(); toggleSlide(); }
+    else if (e.key.toLowerCase() === "f") toggleFav(lbList[lbIdx].src);
+    return;
+  }
+  if (vm.classList.contains("open")) { if (e.key === "Escape") closeVM(); return; }
+  if (curTab === "reels" && reelView === "feed" && videos.length) {
+    if (e.key === "ArrowDown") { e.preventDefault(); goReel(curReel + 1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); goReel(curReel - 1); }
+    else if (e.key === " ") { e.preventDefault(); togglePlay(feed.children[curReel]); }
+    else if (e.key.toLowerCase() === "m") feed.children[curReel]?.querySelector(".mute").click();
+    else if (e.key.toLowerCase() === "l") feed.children[curReel]?.querySelector(".like").click();
+  }
+});
+document.addEventListener("visibilitychange", () => { if (document.hidden) pauseAllReels(); else playCurrentReel(); });
+
+/* ---------- Init ---------- */
+buildChips();
+renderPhotos();
+showTab(["photos","reels","favs"].includes(prefs.tab) ? prefs.tab : "photos", false);
+refreshFavUI();
+</script>
+</body>
+</html>
